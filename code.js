@@ -1,6 +1,14 @@
 var Layout = require("Layout");
 var Storage = require("Storage");
 
+// allowing to print a graphicsbuffer to console
+Graphics.prototype.print = function() {
+  for (var y=0;y<this.getHeight();y++)
+    console.log(new Uint8Array(this.buffer,this.getWidth()*y,this.getWidth()).toString());
+};
+
+
+// stack of screens used during the game loop
 var screenStack = [];
 
 // abstract screen class
@@ -91,9 +99,66 @@ class MainScreen extends Screen {
   }
 }
 
+const contractor_images = ["otto.img", "oldman.img", "cat.img"];
+const vegetables = ["onion", "corn", "turnip", "salad", "tomato", "potato", "chilli"];
+
+
+class Contractor {
+  constructor(){
+    this.img = contractor_images[Math.floor(Math.random() * contractor_images.length)];
+    this.selected = false;
+    this.amounts = [0, 0, 0, 0, 0, 0];
+    this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
+    this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
+    console.log(this.amounts);
+  }
+}
+
+// store which amounts of vegetables have been selected
+var amounts = [0, 0, 0, 0, 0, 0];
+
+// initialize contractors at the beginning of the game, replace them after their contracts have been fulfilled
+var contractors = [];
+for (let i = 0; i < 5; i++) {
+      let c = new Contractor();
+      this.contractors.push(c);
+}
+
+
 // implements the contracts screen showing the different customers and their needs
 class ContractsScreen extends Screen {
   constructor() {
+    this.contractarea = Graphics.createArrayBuffer(450, 90, 8);
+    this.contractarea.fillRect(0, 0, 450, 90);
+
+
+
+    for (let i = 0; i < 5; i++) {
+      this.contractarea.drawImage(Storage.read(contractors[i].img), i*90, 0);
+      //this.contractarea.setColor(0).drawRect(i*90, 0, i*90+69, 65);
+      if (contractors[i].selected){
+        this.contractarea.drawImage(Storage.read("checkbox_checked.png"), i*90+70, 0);
+      }
+      else {
+        this.contractarea.drawImage(Storage.read("checkbox.png"), i*90+70, 0);
+      }
+    }
+
+    this.offset_x = 0;
+
+    var gimg = {
+      width:  450,
+      height:  90,
+      bpp:  8,
+      buffer:  this.contractarea.buffer
+    };
+
+    this.contractarea.flip = function(offset_x) {
+      g.drawImage(gimg, offset_x, 110);
+    };
+
+    g.clear();
+    this.contractarea.flip();
   }
 
   draw(){
@@ -149,6 +214,13 @@ class ContractsScreen extends Screen {
   }
 
   drag(event){
+    this.offset_x += event.dx;
+    if (this.offset_x > 0){
+      this.offset_x = 0;
+    }
+    if (this.offset_x < -450+172) {
+      this.offset_x = -450+172;
+    }
   }
 
   button(){
@@ -184,8 +256,8 @@ class Tomato extends Vegetable{
   }
 }
 
-var cropPhase1 = ["seeding.img", "seeding.img"];
-var cropPhase2 = ["seeding2.img", "seeding2.img"];
+var cropPhase1 = ["seeding.img", "watering1.png", "grow1.png"];
+var cropPhase2 = ["seeding2.img", "watering2.png", "grow2.png"];
 
 
 // implements the farming screen showing the different crops and which exercises need to be completed to harvest them
@@ -204,8 +276,12 @@ class FarmScreen extends Screen {
       this.active = false;
       /*
       this.timerInterval = setInterval(function(screen){
-        console.log(screen.seconds);
-        screen.seconds -= 1;
+        if (screen.seconds > 0) {
+          screen.seconds -= 1;
+          if (screen.seconds == 0){
+            Bangle.buzz()
+          }
+        }
         screen.drawTimer();
       }, 1000, this); //seconds*/
     } else {
@@ -215,7 +291,6 @@ class FarmScreen extends Screen {
     this.flippedTrainer = false;
 
     this.trainerInterval = setInterval(function(screen){
-      console.log(screen.flippedTrainer);
       screen.flippedTrainer = !screen.flippedTrainer;
       screen.drawTrainer();
     }, 1000, this); //every two seconds
@@ -308,10 +383,9 @@ class FarmScreen extends Screen {
   }
 
   drag(event){
-    g.clear();
-
     this.dragged += event.dx;
-    if (this.dragged < -100 && this.validdrag == true){
+    if (this.dragged < -50 && this.validdrag == true){
+      g.clear();
       this.currentPhase += 1;
       console.log("phase: " + this.currentPhase);
       this.validdrag = false;
@@ -345,8 +419,8 @@ class FarmScreen extends Screen {
     }
 
     if (event.b == 0) {
-      this.dragged = 0;
       this.validdrag = true;
+      this.dragged = 0;
     }
   }
 
@@ -451,7 +525,6 @@ class StatsScreen extends Screen {
   }
 }
 
-
 // implements the plot screen for a single plot
 class PlotScreen extends Screen {  
   constructor(caption, plotData, view) {
@@ -508,12 +581,12 @@ class PlotScreen extends Screen {
 // implements the shopping screen allowing to buy cool stuff
 class ShoppingScreen extends Screen {
   constructor() {
-    this.posx = [10, 70, 130, 10, 70, 130];
-    this.posy = [10, 10, 10, 130, 130, 130];
+    this.posx = [15, 70, 130, 15, 70, 130];
+    this.posy = [15, 15, 15, 130, 130, 130];
     this.ang = 0;
     this.object = Storage.read("farmer.img");
     this.drawCall = setInterval(function(screen) {
-      screen.ang += 0.01;
+      screen.ang += 0.05;
       screen.drawRotatedObjects();
     }, 100, this);
     
@@ -521,14 +594,11 @@ class ShoppingScreen extends Screen {
 
   drawRotatedObjects() {
     g.clear();
-    g.setFont("6x8:4x4").drawString("You did it!", 50, 50);
+    g.setFont("6x8:2x3").drawString("You did it!", 20, 60);
     for (let i = 0; i < 6; i++){
-      g.drawImage(this.object, this.posx[i], this.posy[i], {scale:0.8, rotate:this.ang});
+      if (i == 4)
+        g.drawImage(this.object, this.posx[i]+10, this.posy[i]+10, {scale:0.8, rotate:this.ang});
     }
-    else{
-      renderBar(5,20,data);
-    }
-
   }
 
   draw(){
@@ -557,7 +627,6 @@ class ShoppingScreen extends Screen {
     screenStack.pop(screenStack.length-1);
   }
 }
-
 
 
 // prepare screenStack
