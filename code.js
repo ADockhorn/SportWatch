@@ -106,9 +106,9 @@ const vegetables = ["onion", "corn", "turnip", "salad", "tomato", "potato", "chi
 class Contractor {
   constructor(){
     this.img = contractor_images[Math.floor(Math.random() * contractor_images.length)];
-    this.vegetable = new Vegetable();
     this.selected = false;
     this.amounts = [0, 0, 0, 0, 0, 0];
+    this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
     this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
     console.log(this.amounts);
   }
@@ -180,7 +180,7 @@ class ContractsScreen extends Screen {
     g.drawImage(Storage.read("onion.img"), 86, 37, {scale:0.5}); // onion
     g.setFont("6x8:2x2").drawString("x" + amounts[4], 116, 47);
     
-    g.drawImage(Storage.read("wwheat.png"), 86, 72, {scale:0.5}); // wheat
+    g.drawImage(Storage.read("wheat.png"), 86, 72, {scale:0.5}); // wheat
     g.setFont("6x8:2x2").drawString("x" + amounts[5], 116, 76);
     
     g.drawLine(84, 5, 84, 100);
@@ -256,8 +256,8 @@ class Tomato extends Vegetable{
   }
 }
 
-var cropPhase1 = ["seeding.img", "seeding.img"];
-var cropPhase2 = ["seeding2.img", "seeding2.img"];
+var cropPhase1 = ["seeding.img", "watering1.png", "grow1.png"];
+var cropPhase2 = ["seeding2.img", "watering2.png", "grow2.png"];
 
 
 // implements the farming screen showing the different crops and which exercises need to be completed to harvest them
@@ -320,11 +320,11 @@ class FarmScreen extends Screen {
       g.setFont("6x8").drawString(this.vegetable.text[this.currentPhase], 35, 70);
     if(this.flippedTrainer){
       g.drawImage(Storage.read(this.vegetable.anim1[this.currentPhase]), 9, 105, {scale:0.3});
-      g.drawImage(Storage.read(cropPhase1[this.currentPhase]), 120, 105, {scale:1});
+      g.drawImage(Storage.read(cropPhase1[this.currentPhase]), 100, 105, {scale:1});
     }
     else {
       g.drawImage(Storage.read(this.vegetable.anim2[this.currentPhase]), 9, 105, {scale:0.3});
-      g.drawImage(Storage.read(cropPhase2[this.currentPhase]), 120, 105, {scale:1});
+      g.drawImage(Storage.read(cropPhase2[this.currentPhase]), 100, 105, {scale:1});
     }
   }
 
@@ -336,7 +336,7 @@ class FarmScreen extends Screen {
 
   drag(event){
     this.dragged += event.dx;
-    if (this.dragged < -100 && this.validdrag == true){
+    if (this.dragged < -50 && this.validdrag == true){
       g.clear();
       this.currentPhase += 1;
       console.log("phase: " + this.currentPhase);
