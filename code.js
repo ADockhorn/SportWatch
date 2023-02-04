@@ -102,18 +102,6 @@ class MainScreen extends Screen {
 const contractor_images = ["otto.img", "oldman.img", "cat.img"];
 const vegetables = ["onion", "corn", "turnip", "salad", "tomato", "potato", "chilli"];
 
-class Vegetable {
-  constructor(){
-    this.name = "";
-    this.anim1 = "";
-    this.anim2 = "";
-    
-    //sow 
-    //water
-    //grow
-    //harvest
-  }
-}
 
 class Contractor {
   constructor(){
@@ -286,8 +274,12 @@ class FarmScreen extends Screen {
     {
       this.seconds = this.vegetable.count * 10; //max time for timer
       this.timerInterval = setInterval(function(screen){
-        console.log(screen.seconds);
-        screen.seconds -= 1;
+        if (screen.seconds > 0) {
+          screen.seconds -= 1;
+          if (screen.seconds == 0){
+            Bangle.buzz()
+          }
+        }
         screen.drawTimer();
       }, 1000, this); //seconds
     } else {
@@ -297,10 +289,12 @@ class FarmScreen extends Screen {
     this.flippedTrainer = false;
     
     this.trainerInterval = setInterval(function(screen){
-      console.log(screen.flippedTrainer);
       screen.flippedTrainer = !screen.flippedTrainer;
       screen.drawTrainer();
     }, 1000, this); //every two seconds
+    
+    this.drawTrainer();
+    this.drawTimer();
   }
 
   draw(){
@@ -341,13 +335,13 @@ class FarmScreen extends Screen {
   }
 
   drag(event){
-    g.clear();
-
     this.dragged += event.dx;
-    if (this.dragged < 100 && this.validdrag == true){
+    if (this.dragged < -100 && this.validdrag == true){
+      g.clear();
       this.currentPhase += 1;
       console.log("phase: " + this.currentPhase);
       this.validdrag = false;
+      this.dragged = 0;
       
       // next exercise & timer reset
       if (this.timerInterval != undefined){
@@ -358,17 +352,24 @@ class FarmScreen extends Screen {
       {
         this.seconds = this.vegetable.count * 10; //max time for timer
         this.timerInterval = setInterval(function(screen){
-          console.log(screen.seconds);
-          screen.seconds -= 1;
+          if (screen.seconds > 0) {
+            screen.seconds -= 1;
+            if (screen.seconds == 0){
+              Bangle.buzz()
+            }
+          }
           screen.drawTimer();
         }, 1000, this); //seconds
       } else {
         this.seconds = -1;
       }
+      this.drawTrainer();
+      this.drawTimer();
     }
     
     if (event.b == 0) {
       this.validdrag = true;
+      this.dragged = 0;
     }
   }
 
