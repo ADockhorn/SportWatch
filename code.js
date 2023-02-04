@@ -1,6 +1,14 @@
 var Layout = require("Layout");
 var Storage = require("Storage");
 
+// allowing to print a graphicsbuffer to console
+Graphics.prototype.print = function() {
+  for (var y=0;y<this.getHeight();y++)
+    console.log(new Uint8Array(this.buffer,this.getWidth()*y,this.getWidth()).toString());
+};
+
+
+// stack of screens used during the game loop
 var screenStack = [];
 
 // abstract screen class
@@ -91,25 +99,128 @@ class MainScreen extends Screen {
   }
 }
 
+const contractor_images = ["otto.img", "oldman.img", "cat.img"];
+const vegetables = ["onion", "corn", "turnip", "salad", "tomato", "potato", "chilli"];
+
+
+class Contractor {
+  constructor(){
+    this.img = contractor_images[Math.floor(Math.random() * contractor_images.length)];
+    this.vegetable = new Vegetable();
+    this.selected = false;
+    this.amounts = [0, 0, 0, 0, 0, 0];
+    this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
+    console.log(this.amounts);
+  }
+}
+
+// store which amounts of vegetables have been selected
+var amounts = [0, 0, 0, 0, 0, 0];
+
+// initialize contractors at the beginning of the game, replace them after their contracts have been fulfilled
+var contractors = [];
+for (let i = 0; i < 5; i++) {
+      let c = new Contractor();
+      this.contractors.push(c);
+}
+
+
 // implements the contracts screen showing the different customers and their needs
 class ContractsScreen extends Screen {
   constructor() {
+    this.contractarea = Graphics.createArrayBuffer(450, 90, 8);
+    this.contractarea.fillRect(0, 0, 450, 90);
+
+
+
+    for (let i = 0; i < 5; i++) {
+      this.contractarea.drawImage(Storage.read(contractors[i].img), i*90, 0);
+      //this.contractarea.setColor(0).drawRect(i*90, 0, i*90+69, 65);
+      if (contractors[i].selected){
+        this.contractarea.drawImage(Storage.read("checkbox_checked.png"), i*90+70, 0);
+      }
+      else {
+        this.contractarea.drawImage(Storage.read("checkbox.png"), i*90+70, 0);
+      }
+    }
+
+    this.offset_x = 0;
+
+    var gimg = {
+      width:  450,
+      height:  90,
+      bpp:  8,
+      buffer:  this.contractarea.buffer
+    };
+
+    this.contractarea.flip = function(offset_x) {
+      g.drawImage(gimg, offset_x, 110);
+    };
+
+    g.clear();
+    this.contractarea.flip();
   }
 
   draw(){
     g.clear();
-    g.drawImage(Storage.read("otto.img"), 9, 95); // otto
-    g.drawImage(Storage.read("otto.img"), 109, 95); // otto
-    g.drawImage(Storage.read("cat.img"), 190, 95); // cat
+    this.contractarea.flip(this.offset_x);
+    g.drawRect(5,5, 163, 100);
+    g.drawImage(Storage.read("turnip.png"), 8, 10, {scale:0.5}); // turnip
+    g.setFont("6x8:2x2").drawString("x" + amounts[0], 40, 15);
+
+    g.drawImage(Storage.read("tomato.img"), 6, 40, {scale:0.5}); // tomato
+    g.setFont("6x8:2x2").drawString("x" + amounts[1], 40, 47);
+    
+    g.drawImage(Storage.read("chilli.img"), 5, 68, {scale:0.5}); // chilli
+    g.setFont("6x8:2x2").drawString("x" + amounts[2], 40, 76);
+    
+    g.drawImage(Storage.read("corn.img"), 86, 10); // corn
+    g.setFont("6x8:2x2").drawString("x" + amounts[3], 116, 15);
+    
+    g.drawImage(Storage.read("onion.img"), 86, 37, {scale:0.5}); // onion
+    g.setFont("6x8:2x2").drawString("x" + amounts[4], 116, 47);
+    
+    g.drawImage(Storage.read("wwheat.png"), 86, 72, {scale:0.5}); // wheat
+    g.setFont("6x8:2x2").drawString("x" + amounts[5], 116, 76);
+    
+    g.drawLine(84, 5, 84, 100);
+    
   }
 
   update(){
   }
 
   touch(button, xy){
+    //otto size = 71x71
+    for (let i = 0; i < 5; i++) {
+      if (xy.x > i*90+this.offset_x && xy.x < i*90+69+this.offset_x && xy.y > 110 && xy.y < 175){
+        //this.contractarea.setColor(0).drawRect(i*90, 0, i*90+69, 69);
+        contractors[i].selected = !contractors[i].selected;
+        this.contractarea.setColor("#FFFFFF").fillRect(i*90+70, 0, i*90+70+13, 13);
+        
+        if (contractors[i].selected){
+          this.contractarea.setColor(0).drawImage(Storage.read("checkbox_checked.png"), i*90+70, 0);
+          for (let j = 0; j < 6; j++){
+            amounts[j] += contractors[i].amounts[j];
+          }
+        } else {
+          this.contractarea.setColor(0).drawImage(Storage.read("checkbox.png"), i*90+70, 0);
+          for (let j = 0; j < 6; j++){
+            amounts[j] -= contractors[i].amounts[j];
+          }
+        }
+      }
+    }
   }
 
   drag(event){
+    this.offset_x += event.dx;
+    if (this.offset_x > 0){
+      this.offset_x = 0;
+    }
+    if (this.offset_x < -450+172) {
+      this.offset_x = -450+172;
+    }
   }
 
   button(){
@@ -163,8 +274,12 @@ class FarmScreen extends Screen {
     {
       this.seconds = this.vegetable.count * 10; //max time for timer
       this.timerInterval = setInterval(function(screen){
-        console.log(screen.seconds);
-        screen.seconds -= 1;
+        if (screen.seconds > 0) {
+          screen.seconds -= 1;
+          if (screen.seconds == 0){
+            Bangle.buzz()
+          }
+        }
         screen.drawTimer();
       }, 1000, this); //seconds
     } else {
@@ -174,10 +289,12 @@ class FarmScreen extends Screen {
     this.flippedTrainer = false;
     
     this.trainerInterval = setInterval(function(screen){
-      console.log(screen.flippedTrainer);
       screen.flippedTrainer = !screen.flippedTrainer;
       screen.drawTrainer();
     }, 1000, this); //every two seconds
+    
+    this.drawTrainer();
+    this.drawTimer();
   }
 
   draw(){
@@ -218,13 +335,13 @@ class FarmScreen extends Screen {
   }
 
   drag(event){
-    g.clear();
-
     this.dragged += event.dx;
-    if (this.dragged < 100 && this.validdrag == true){
+    if (this.dragged < -100 && this.validdrag == true){
+      g.clear();
       this.currentPhase += 1;
       console.log("phase: " + this.currentPhase);
       this.validdrag = false;
+      this.dragged = 0;
       
       // next exercise & timer reset
       if (this.timerInterval != undefined){
@@ -235,17 +352,24 @@ class FarmScreen extends Screen {
       {
         this.seconds = this.vegetable.count * 10; //max time for timer
         this.timerInterval = setInterval(function(screen){
-          console.log(screen.seconds);
-          screen.seconds -= 1;
+          if (screen.seconds > 0) {
+            screen.seconds -= 1;
+            if (screen.seconds == 0){
+              Bangle.buzz()
+            }
+          }
           screen.drawTimer();
         }, 1000, this); //seconds
       } else {
         this.seconds = -1;
       }
+      this.drawTrainer();
+      this.drawTimer();
     }
     
     if (event.b == 0) {
       this.validdrag = true;
+      this.dragged = 0;
     }
   }
 
