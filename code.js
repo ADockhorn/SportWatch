@@ -397,8 +397,121 @@ class StatsScreen extends Screen {
   }
 
   draw(){
+  g.clear();    
+
+  //test data
+  var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+  var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
+  var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
+  var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
+    
+  //render function for bar plot
+  function renderBar(xCo, yCo, data) {
+    require("graph").drawBar(g, data, {
+      miny: 0,
+      axes : true,
+      x:xCo, y:yCo, width:70, height:80
+    });
+  }
+  
+  //render function for line plot
+  function renderLine(xCo, yCo, data) {
+    require("graph").drawLine(g, data, {
+      miny: 0,
+      axes : true,
+      x:xCo, y:yCo, width:70, height:80
+    });
+  }
+    
+  g.setFont("6x8").drawString("Custom per day", 0, 3);
+  renderLine(5,10,data1);
+  g.setFont("6x8").drawString("Veggies last week", 90, 3);
+  renderBar(90,10,data2);
+  g.setFont("6x8").drawString("Custom per day", 0, 90);
+  renderBar(5,100,data3);
+  g.setFont("6x8").drawString("Veggies per day", 90, 90);
+  renderLine(90,100,data3);
+  //g.setFont("6x8").drawString("Finished", 100, 110);
+  //g.setFont("6x8").drawString("Routines:", 100, 130);
+  //g.setFont("6x8").drawString("168", 115, 150);
+    
+  }
+
+  update(){
+  }
+
+  touch(button, xy){
+    console.log("touch", xy.x, xy.y);
+   
+  //test data
+  var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+  var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
+  var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
+  var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
+        
+    //transition to detail view of the plots
+    if (xy.x > 5 && xy.x < 75 && xy.y > 3 && xy.y < 83) {
+      screenStack.push(new PlotScreen("Customer per day", data1, true));
+    }
+
+    if (xy.x > 85 && xy.x < 155 && xy.y > 3 && xy.y < 83) {
+      screenStack.push(new PlotScreen("Veggies last week", data2, false));
+    }
+
+    if (xy.x > 5 && xy.x < 75 && xy.y > 93 && xy.y < 173) {
+      screenStack.push(new PlotScreen("Customer per day", data3, false));
+    }
+
+    if (xy.x > 85 && xy.x < 155 && xy.y > 93 && xy.y < 173) {
+      screenStack.push(new PlotScreen("Veggies per day", data4, true));
+    }
+  }
+
+  drag(event){
+  }
+
+  button(){
+    screenStack.pop(screenStack.length-1);
+  }
+}
+
+// implements the plot screen for a single plot
+class PlotScreen extends Screen {  
+  constructor(caption, plotData, view) {
+    renderText = caption;
+    data = plotData;
+    style = view;
+  }
+
+  draw(){
     g.clear();
-    g.setFont("6x8").drawString("Stats", 10, 10);
+    
+  //render function bar plot full screen
+  function renderBar(xCo, yCo, data) {
+  require("graph").drawBar(g, data, {
+    miny: 0,
+    axes : true,
+    x:xCo, y:yCo, width:150, height:150
+  });
+  }
+  
+  //render function line plot full screen
+  function renderLine(xCo, yCo, data) {
+    require("graph").drawLine(g, data, {
+      miny: 0,
+      axes : true,
+      x:xCo, y:yCo, width:150, height:150
+    });
+  }
+    
+    g.setFont("6x8").drawString(renderText, 44, 3);
+    if(style){
+      renderLine(5,20,data);
+    }
+    else{
+      renderBar(5,20,data);
+    }
+    
   }
 
   update(){
