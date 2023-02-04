@@ -240,15 +240,98 @@ class ContractsScreen extends Screen {
   }
 }
 
+class Vegetable {
+  constructor(count) {
+  }
+}
+
+class Onion extends Vegetable{
+  constructor(count){
+    this.count = count;
+    this.name = "Onion";
+    this.anim1 = ["flutter1.img", "sealjacks1.img", "kneeelbow1.img", ""];
+    this.anim2 = ["flutter2.img", "sealjacks2.img", "kneeelbow2.img", ""];
+    this.text = ["FLUTTER KICKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", ""];
+    this.countstyle = [true, true, true, true];
+    this.harvest = []
+  }
+}
+
+class Tomato extends Vegetable{
+  constructor(count){
+    this.count = count;
+    this.name = "Tomato";
+    this.anim1 = ["sealjacks1.img", "sealjacks1.img", "kneeelbow1.img", ""];
+    this.anim2 = ["sealjacks2.img", "sealjacks2.img", "kneeelbow2.img", ""];
+    this.text = ["SEAL JACKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", ""];
+    this.countstyle = [true, false, true, true]; // if true = time, else repetitions
+  }
+}
+
+var cropPhase1 = ["seeding.img", "seeding.img"];
+var cropPhase2 = ["seeding2.img", "seeding2.img"];
+
+
 // implements the farming screen showing the different crops and which exercises need to be completed to harvest them
 class FarmScreen extends Screen {
   constructor() {
+    g.clear();
+    this.currentPhase = 0;
+    this.vegetable = new Onion(5);
+    
+    this.dragged = 0;
+    this.validdrag = true;
+    
+    if (this.vegetable.countstyle[0])
+    {
+      this.seconds = this.vegetable.count * 10; //max time for timer
+      this.timerInterval = setInterval(function(screen){
+        console.log(screen.seconds);
+        screen.seconds -= 1;
+        screen.drawTimer();
+      }, 1000, this); //seconds
+    } else {
+      this.seconds = -1;
+    }
+    
+    this.flippedTrainer = false;
+    
+    this.trainerInterval = setInterval(function(screen){
+      console.log(screen.flippedTrainer);
+      screen.flippedTrainer = !screen.flippedTrainer;
+      screen.drawTrainer();
+    }, 1000, this); //every two seconds
   }
 
   draw(){
-    g.clear();
-    g.setFont("6x8").drawString("Farm", 10, 10);
-    g.drawImage(Storage.read("oldman.img"), 9, 95); // oldman
+    //g.setFont("6x8").drawString("Farm", 10, 10);
+    //g.drawImage(Storage.read("oldman.img"), 9, 95); // oldman
+  }
+
+  drawTimer(){ //once per second
+    min = String(Math.floor(this.seconds/60));
+    if(min.length < 2){
+      min = '0'+min;
+    }
+    sec = String(this.seconds%60);
+    if(sec.length < 2){
+      sec = '0'+sec;
+    }
+    g.clearRect(0, 0, 176, 70);
+    g.setFont("6x8:3x3").drawString(''+min+':'+sec, 55, 42);
+  }
+
+  drawTrainer(){
+      g.clearRect(0, 95, 176, 176);
+      g.setFont("6x8").drawString(this.vegetable.text[this.currentPhase], 35, 70);
+    if(this.flippedTrainer){
+      g.drawImage(Storage.read(this.vegetable.anim1[this.currentPhase]), 9, 105, {scale:0.3});
+      g.drawImage(Storage.read(cropPhase1[this.currentPhase]), 120, 105, {scale:1});
+    }
+    else {
+      g.drawImage(Storage.read(this.vegetable.anim2[this.currentPhase]), 9, 105, {scale:0.3});
+      g.drawImage(Storage.read(cropPhase2[this.currentPhase]), 120, 105, {scale:1});
+    }
   }
 
   update(){
@@ -258,9 +341,50 @@ class FarmScreen extends Screen {
   }
 
   drag(event){
+    g.clear();
+
+    this.dragged += event.dx;
+    if (this.dragged < 100 && this.validdrag == true){
+      this.currentPhase += 1;
+      console.log("phase: " + this.currentPhase);
+      this.validdrag = false;
+      
+      // next exercise & timer reset
+      if (this.timerInterval != undefined){
+        clearInterval(this.timerInterval);
+        this.timerInterval = undefined;
+      }
+      if (this.vegetable.countstyle[this.currentPhase])
+      {
+        this.seconds = this.vegetable.count * 10; //max time for timer
+        this.timerInterval = setInterval(function(screen){
+          console.log(screen.seconds);
+          screen.seconds -= 1;
+          screen.drawTimer();
+        }, 1000, this); //seconds
+      } else {
+        this.seconds = -1;
+      }
+    }
+    
+    if (event.b == 0) {
+      this.validdrag = true;
+    }
   }
 
   button(){
+    g.clear();
+    
+    // clear seconds timer interval
+    if (this.timerInterval != undefined) {
+      clearInterval(this.timerInterval);
+    }
+    this.timerInterval = undefined;
+    
+    // clear trainer animation interval
+    clearInterval(this.trainerInterval);
+    this.trainerInterval = undefined;
+    
     console.log(screenStack.length);
     screenStack.pop(screenStack.length-1);
   }
