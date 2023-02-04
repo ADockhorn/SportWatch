@@ -170,21 +170,21 @@ class ContractsScreen extends Screen {
 
     g.drawImage(Storage.read("tomato.img"), 6, 40, {scale:0.5}); // tomato
     g.setFont("6x8:2x2").drawString("x" + amounts[1], 40, 47);
-    
+
     g.drawImage(Storage.read("chilli.img"), 5, 68, {scale:0.5}); // chilli
     g.setFont("6x8:2x2").drawString("x" + amounts[2], 40, 76);
-    
+
     g.drawImage(Storage.read("corn.img"), 86, 10); // corn
     g.setFont("6x8:2x2").drawString("x" + amounts[3], 116, 15);
-    
+
     g.drawImage(Storage.read("onion.img"), 86, 37, {scale:0.5}); // onion
     g.setFont("6x8:2x2").drawString("x" + amounts[4], 116, 47);
-    
+
     g.drawImage(Storage.read("wheat.png"), 86, 72, {scale:0.5}); // wheat
     g.setFont("6x8:2x2").drawString("x" + amounts[5], 116, 76);
-    
+
     g.drawLine(84, 5, 84, 100);
-    
+
   }
 
   update(){
@@ -197,7 +197,7 @@ class ContractsScreen extends Screen {
         //this.contractarea.setColor(0).drawRect(i*90, 0, i*90+69, 69);
         contractors[i].selected = !contractors[i].selected;
         this.contractarea.setColor("#FFFFFF").fillRect(i*90+70, 0, i*90+70+13, 13);
-        
+
         if (contractors[i].selected){
           this.contractarea.setColor(0).drawImage(Storage.read("checkbox_checked.png"), i*90+70, 0);
           for (let j = 0; j < 6; j++){
@@ -237,11 +237,11 @@ class Onion extends Vegetable{
   constructor(count){
     this.count = count;
     this.name = "Onion";
-    this.anim1 = ["flutter1.img", "sealjacks1.img", "kneeelbow1.img", ""];
-    this.anim2 = ["flutter2.img", "sealjacks2.img", "kneeelbow2.img", ""];
-    this.text = ["FLUTTER KICKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", ""];
+    this.anim1 = ["flutter1.img", "sealjacks1.img", "kneeelbow1.img", "flutter1.img"];
+    this.anim2 = ["flutter2.img", "sealjacks2.img", "kneeelbow2.img", "flutter2.img"];
+    this.text = ["FLUTTER KICKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", "FLUTTER KICKS to HARVEST!"];
     this.countstyle = [true, true, true, true];
-    this.harvest = []
+    this.harvest = ["harvestonion1.png", "harvestonion2.png"];
   }
 }
 
@@ -266,13 +266,15 @@ class FarmScreen extends Screen {
     g.clear();
     this.currentPhase = 0;
     this.vegetable = new Onion(5);
-    
+
     this.dragged = 0;
     this.validdrag = true;
-    
+
     if (this.vegetable.countstyle[0])
     {
       this.seconds = this.vegetable.count * 10; //max time for timer
+      this.active = false;
+      /*
       this.timerInterval = setInterval(function(screen){
         if (screen.seconds > 0) {
           screen.seconds -= 1;
@@ -281,25 +283,33 @@ class FarmScreen extends Screen {
           }
         }
         screen.drawTimer();
-      }, 1000, this); //seconds
+      }, 1000, this); //seconds*/
     } else {
       this.seconds = -1;
     }
-    
+
     this.flippedTrainer = false;
-    
+
     this.trainerInterval = setInterval(function(screen){
       screen.flippedTrainer = !screen.flippedTrainer;
       screen.drawTrainer();
     }, 1000, this); //every two seconds
-    
+
     this.drawTrainer();
     this.drawTimer();
+    this.drawStartButton();
+
   }
 
   draw(){
     //g.setFont("6x8").drawString("Farm", 10, 10);
     //g.drawImage(Storage.read("oldman.img"), 9, 95); // oldman
+  }
+
+  drawStartButton() {
+    g.drawRect(6, 3, 165, 40);
+    g.setFont("6x8:3x3").drawString('Start', 42, 12);
+    g.drawRect(0,0,172,172);
   }
 
   drawTimer(){ //once per second
@@ -311,27 +321,65 @@ class FarmScreen extends Screen {
     if(sec.length < 2){
       sec = '0'+sec;
     }
-    g.clearRect(0, 0, 176, 70);
-    g.setFont("6x8:3x3").drawString(''+min+':'+sec, 55, 42);
+    g.clearRect(1, 42, 171, 65);
+    g.setFont("6x8:3x3").drawString(''+min+':'+sec, 42, 42);
   }
 
   drawTrainer(){
-      g.clearRect(0, 95, 176, 176);
-      g.setFont("6x8").drawString(this.vegetable.text[this.currentPhase], 35, 70);
+    // clear bottom half of screen
+    g.clearRect(0, 95, 176, 176);
+
+    // write exercise description
+    g.setFont("6x8").drawString(this.vegetable.text[this.currentPhase], 25, 70);
+
+    // two animation steps
     if(this.flippedTrainer){
+      // draw gropPhase, last gropPhase is dependent on the vegetable
+      if (this.currentPhase == 3){
+        g.drawImage(Storage.read(this.vegetable.harvest[1]), 100, 105, {scale:0.8});
+      } else {
+        g.drawImage(Storage.read(cropPhase1[this.currentPhase]), 100, 105, {scale: this.currentPhase == 0 ? 1 : 0.8});
+      }
+
+      // draw the exercise
       g.drawImage(Storage.read(this.vegetable.anim1[this.currentPhase]), 9, 105, {scale:0.3});
-      g.drawImage(Storage.read(cropPhase1[this.currentPhase]), 100, 105, {scale:1});
     }
     else {
+      // draw gropPhase, last gropPhase is dependent on the vegetable
+      if (this.currentPhase == 3){
+        g.drawImage(Storage.read(this.vegetable.harvest[0]), 100, 105, {scale:0.8});
+      } else {
+        g.drawImage(Storage.read(cropPhase2[this.currentPhase]), 100, 105, {scale:this.currentPhase == 0 ? 1 : 0.8});
+      }
+
+      // draw the exercise
       g.drawImage(Storage.read(this.vegetable.anim2[this.currentPhase]), 9, 105, {scale:0.3});
-      g.drawImage(Storage.read(cropPhase2[this.currentPhase]), 100, 105, {scale:1});
     }
   }
 
   update(){
+    if (this.active==false){
+    }
   }
 
   touch(button, xy){
+    if (this.active == false && xy.x > 6 && xy.x < 165 && xy.y > 3 && xy.y < 40){
+      this.active = true;
+      g.clearRect(6,3,165,40);
+
+      if (this.vegetable.countstyle[this.currentPhase])
+      {
+        this.timerInterval = setInterval(function(screen){
+          if (screen.seconds > 0) {
+            screen.seconds -= 1;
+            if (screen.seconds == 0){
+              Bangle.buzz();
+            }
+          }
+          screen.drawTimer();
+        }, 1000, this); //seconds*/
+      }
+    }
   }
 
   drag(event){
@@ -342,7 +390,8 @@ class FarmScreen extends Screen {
       console.log("phase: " + this.currentPhase);
       this.validdrag = false;
       this.dragged = 0;
-      
+      this.active = false;
+
       // next exercise & timer reset
       if (this.timerInterval != undefined){
         clearInterval(this.timerInterval);
@@ -351,7 +400,8 @@ class FarmScreen extends Screen {
       if (this.vegetable.countstyle[this.currentPhase])
       {
         this.seconds = this.vegetable.count * 10; //max time for timer
-        this.timerInterval = setInterval(function(screen){
+        this.active = false;
+        /*this.timerInterval = setInterval(function(screen){
           if (screen.seconds > 0) {
             screen.seconds -= 1;
             if (screen.seconds == 0){
@@ -359,14 +409,15 @@ class FarmScreen extends Screen {
             }
           }
           screen.drawTimer();
-        }, 1000, this); //seconds
+        }, 1000, this); //seconds*/
       } else {
         this.seconds = -1;
       }
       this.drawTrainer();
       this.drawTimer();
+      this.drawStartButton();
     }
-    
+
     if (event.b == 0) {
       this.validdrag = true;
       this.dragged = 0;
@@ -375,17 +426,17 @@ class FarmScreen extends Screen {
 
   button(){
     g.clear();
-    
+
     // clear seconds timer interval
     if (this.timerInterval != undefined) {
       clearInterval(this.timerInterval);
     }
     this.timerInterval = undefined;
-    
+
     // clear trainer animation interval
     clearInterval(this.trainerInterval);
     this.trainerInterval = undefined;
-    
+
     console.log(screenStack.length);
     screenStack.pop(screenStack.length-1);
   }
@@ -397,14 +448,14 @@ class StatsScreen extends Screen {
   }
 
   draw(){
-  g.clear();    
+  g.clear();
 
   //test data
   var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
   var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
   var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
   var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
-    
+
   //render function for bar plot
   function renderBar(xCo, yCo, data) {
     require("graph").drawBar(g, data, {
@@ -413,7 +464,7 @@ class StatsScreen extends Screen {
       x:xCo, y:yCo, width:70, height:80
     });
   }
-  
+
   //render function for line plot
   function renderLine(xCo, yCo, data) {
     require("graph").drawLine(g, data, {
@@ -422,7 +473,7 @@ class StatsScreen extends Screen {
       x:xCo, y:yCo, width:70, height:80
     });
   }
-    
+
   g.setFont("6x8").drawString("Custom per day", 0, 3);
   renderLine(5,10,data1);
   g.setFont("6x8").drawString("Veggies last week", 90, 3);
@@ -430,11 +481,10 @@ class StatsScreen extends Screen {
   g.setFont("6x8").drawString("Custom per day", 0, 90);
   renderBar(5,100,data3);
   g.setFont("6x8").drawString("Veggies per day", 90, 90);
-  renderLine(90,100,data3);
+  renderLine(90,100,data4);
   //g.setFont("6x8").drawString("Finished", 100, 110);
   //g.setFont("6x8").drawString("Routines:", 100, 130);
   //g.setFont("6x8").drawString("168", 115, 150);
-    
   }
 
   update(){
@@ -442,13 +492,13 @@ class StatsScreen extends Screen {
 
   touch(button, xy){
     console.log("touch", xy.x, xy.y);
-   
-  //test data
-  var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-  var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
-  var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
-  var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
-        
+
+    //test data
+    var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
+    var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
+    var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
+
     //transition to detail view of the plots
     if (xy.x > 5 && xy.x < 75 && xy.y > 3 && xy.y < 83) {
       screenStack.push(new PlotScreen("Customer per day", data1, true));
@@ -485,25 +535,25 @@ class PlotScreen extends Screen {
 
   draw(){
     g.clear();
-    
-  //render function bar plot full screen
-  function renderBar(xCo, yCo, data) {
-  require("graph").drawBar(g, data, {
-    miny: 0,
-    axes : true,
-    x:xCo, y:yCo, width:150, height:150
-  });
-  }
-  
-  //render function line plot full screen
-  function renderLine(xCo, yCo, data) {
-    require("graph").drawLine(g, data, {
-      miny: 0,
-      axes : true,
-      x:xCo, y:yCo, width:150, height:150
-    });
-  }
-    
+
+    //render function bar plot full screen
+    function renderBar(xCo, yCo, data) {
+      require("graph").drawBar(g, data, {
+        miny: 0,
+        axes : true,
+        x:xCo, y:yCo, width:150, height:150
+      });
+    }
+
+    //render function line plot full screen
+    function renderLine(xCo, yCo, data) {
+      require("graph").drawLine(g, data, {
+        miny: 0,
+        axes : true,
+        x:xCo, y:yCo, width:150, height:150
+      });
+    }
+
     g.setFont("6x8").drawString(renderText, 44, 3);
     if(style){
       renderLine(5,20,data);
@@ -511,7 +561,7 @@ class PlotScreen extends Screen {
     else{
       renderBar(5,20,data);
     }
-    
+
   }
 
   update(){
