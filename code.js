@@ -137,10 +137,10 @@ class ContractsScreen extends Screen {
       this.contractarea.drawImage(Storage.read(contractors[i].img), i*90, 0);
       //this.contractarea.setColor(0).drawRect(i*90, 0, i*90+69, 65);
       if (contractors[i].selected){
-        this.contractarea.drawImage(Storage.read("checkbox_checked.png"), i*90+70, 0);
+        this.contractarea.drawImage(Storage.read("checkbox_checked.img"), i*90+70, 0);
       }
       else {
-        this.contractarea.drawImage(Storage.read("checkbox.png"), i*90+70, 0);
+        this.contractarea.drawImage(Storage.read("checkbox.img"), i*90+70, 0);
       }
     }
 
@@ -165,7 +165,7 @@ class ContractsScreen extends Screen {
     g.clear();
     this.contractarea.flip(this.offset_x);
     g.drawRect(5,5, 163, 100);
-    g.drawImage(Storage.read("turnip.png"), 8, 10, {scale:0.5}); // turnip
+    g.drawImage(Storage.read("turnip.img"), 8, 10, {scale:0.5}); // turnip
     g.setFont("6x8:2x2").drawString("x" + amounts[0], 40, 15);
 
     g.drawImage(Storage.read("tomato.img"), 6, 40, {scale:0.5}); // tomato
@@ -180,7 +180,7 @@ class ContractsScreen extends Screen {
     g.drawImage(Storage.read("onion.img"), 86, 37, {scale:0.5}); // onion
     g.setFont("6x8:2x2").drawString("x" + amounts[4], 116, 47);
 
-    g.drawImage(Storage.read("wheat.png"), 86, 72, {scale:0.5}); // wheat
+    g.drawImage(Storage.read("wheat.img"), 86, 72, {scale:0.5}); // wheat
     g.setFont("6x8:2x2").drawString("x" + amounts[5], 116, 76);
 
     g.drawLine(84, 5, 84, 100);
@@ -199,12 +199,12 @@ class ContractsScreen extends Screen {
         this.contractarea.setColor("#FFFFFF").fillRect(i*90+70, 0, i*90+70+13, 13);
 
         if (contractors[i].selected){
-          this.contractarea.setColor(0).drawImage(Storage.read("checkbox_checked.png"), i*90+70, 0);
+          this.contractarea.setColor(0).drawImage(Storage.read("checkbox_checked.img"), i*90+70, 0);
           for (let j = 0; j < 6; j++){
             amounts[j] += contractors[i].amounts[j];
           }
         } else {
-          this.contractarea.setColor(0).drawImage(Storage.read("checkbox.png"), i*90+70, 0);
+          this.contractarea.setColor(0).drawImage(Storage.read("checkbox.img"), i*90+70, 0);
           for (let j = 0; j < 6; j++){
             amounts[j] -= contractors[i].amounts[j];
           }
@@ -237,11 +237,11 @@ class Onion extends Vegetable{
   constructor(count){
     this.count = count;
     this.name = "Onion";
-    this.anim1 = ["flutter1.img", "sealjacks1.img", "kneeelbow1.img", "flutter1.img"];
-    this.anim2 = ["flutter2.img", "sealjacks2.img", "kneeelbow2.img", "flutter2.img"];
+    this.anim1 = ["burpee1.img", "sealjacks1.img", "kneeelbow1.img", "flutter1.img"];
+    this.anim2 = ["burpee2.img", "sealjacks2.img", "kneeelbow2.img", "flutter2.img"];
     this.text = ["FLUTTER KICKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", "FLUTTER KICKS to HARVEST!"];
     this.countstyle = [true, true, true, true];
-    this.harvest = ["harvestonion1.png", "harvestonion2.png"];
+    this.harvest = ["harvestonion1.img", "harvestonion2.img"];
   }
 }
 
@@ -256,8 +256,8 @@ class Tomato extends Vegetable{
   }
 }
 
-var cropPhase1 = ["seeding.img", "watering1.png", "grow1.png"];
-var cropPhase2 = ["seeding2.img", "watering2.png", "grow2.png"];
+var cropPhase1 = ["seeding.img", "watering1.img", "grow1.img"];
+var cropPhase2 = ["seeding2.img", "watering2.img", "grow2.img"];
 
 
 // implements the farming screen showing the different crops and which exercises need to be completed to harvest them
@@ -342,7 +342,7 @@ class FarmScreen extends Screen {
       }
 
       // draw the exercise
-      g.drawImage(Storage.read(this.vegetable.anim1[this.currentPhase]), 9, 105, {scale:0.3});
+      g.drawImage(Storage.read(this.vegetable.anim1[this.currentPhase]), 9, 95, {scale:1});
     }
     else {
       // draw gropPhase, last gropPhase is dependent on the vegetable
@@ -353,7 +353,7 @@ class FarmScreen extends Screen {
       }
 
       // draw the exercise
-      g.drawImage(Storage.read(this.vegetable.anim2[this.currentPhase]), 9, 105, {scale:0.3});
+      g.drawImage(Storage.read(this.vegetable.anim2[this.currentPhase]), 9, 95, {scale:1});
     }
   }
 
