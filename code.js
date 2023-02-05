@@ -356,7 +356,6 @@ class FarmScreen extends Screen {
 
     this.vegetable = undefined;
 
-    amounts = [0, 0, 1, 0, 0 , 0];
     for (var i = 0; i< 6; i++){
         if (amounts[i] > 0 && this.vegetable == undefined) {
           switch (i) {
