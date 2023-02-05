@@ -1,6 +1,8 @@
 var Layout = require("Layout");
 var Storage = require("Storage");
 
+g.setBgColor(1,1,1);
+
 // allowing to print a graphicsbuffer to console
 Graphics.prototype.print = function() {
   for (var y=0;y<this.getHeight();y++)
@@ -44,6 +46,16 @@ class Screen {
 // implements the main screen showing four buttons, one for each area of the game
 class MainScreen extends Screen {
   constructor() {
+    this.init();
+  }
+  
+  init() {
+    this.farm_unlocked = false;
+    for (let i = 0; i < 6; i++){
+      if (amounts[i] > 0) {
+        this.farm_unlocked = true;
+      }
+    }
   }
 
   draw(){
@@ -52,42 +64,56 @@ class MainScreen extends Screen {
     // draw images
     g.drawImage(Storage.read("farmer.img"), 0, 1); // farmer
     g.drawImage(Storage.read("field.img"), 90, 15);  // field
-    g.drawImage(Storage.read("stats2.img"), 9, 95); // stats
-    g.drawImage(Storage.read("farm.img"), 88, 96);   // market
+    g.drawImage(Storage.read("stats2.img"), 49, 95); // stats
+    
+    if (this.farm_unlocked == false){
+      g.drawLine(85, 3, 155, 83);
+      g.drawLine(85, 83, 155, 3);
+    }
+    
+    //g.drawImage(Storage.read("farm.img"), 88, 96);   // market
 
     // draw labels
-    g.setFont("6x8").drawString("Contracts", 13, 75);
+    g.setColor(0).setFont("6x8").drawString("Contracts", 13, 75);
     g.setFont("6x8").drawString("Farm", 110, 75);
-    g.setFont("6x8").drawString("Stats", 25, 165);
-    g.setFont("6x8").drawString("Shop", 110, 165);
+    g.setFont("6x8").drawString("Stats", 65, 165);
+    //g.setFont("6x8").drawString("Shop", 110, 165);
 
     // draw rectangles to indicate button areas
     g.drawRect(5, 3, 75, 83);
     g.drawRect(85, 3, 155, 83);
-    g.drawRect(5, 93, 75, 173);
-    g.drawRect(85, 93, 155, 173);
+    g.drawRect(45, 93, 115, 173);
+    //g.drawRect(85, 93, 155, 173);
   }
 
   update(){
   }
 
   touch(button, xy){
-    console.log("touch", xy.x, xy.y);
     if (xy.x > 5 && xy.x < 75 && xy.y > 3 && xy.y < 83) {
       screenStack.push(new ContractsScreen());
     }
 
     if (xy.x > 85 && xy.x < 155 && xy.y > 3 && xy.y < 83) {
-      screenStack.push(new FarmScreen());
+      for (var i = 0; i< 6; i++){
+        if (amounts[i] > 0) {
+            for (let j = 0; j < 6; j++){
+              recentstats[j] = 0;
+            }
+
+            screenStack.push(new FarmScreen());
+            return;
+        }
+      }
     }
 
-    if (xy.x > 5 && xy.x < 75 && xy.y > 93 && xy.y < 173) {
-      screenStack.push(new StatsScreen());
+    if (xy.x > 45 && xy.x < 115 && xy.y > 93 && xy.y < 173) {
+      screenStack.push(new StatsScreenRecent());
     }
 
-    if (xy.x > 85 && xy.x < 155 && xy.y > 93 && xy.y < 173) {
-      screenStack.push(new ShoppingScreen());
-    }
+    //if (xy.x > 85 && xy.x < 155 && xy.y > 93 && xy.y < 173) {
+    //  screenStack.push(new WinScreen());
+    //}
   }
 
   drag(event){
@@ -105,17 +131,23 @@ const vegetables = ["onion", "corn", "turnip", "salad", "tomato", "potato", "chi
 
 class Contractor {
   constructor(){
-    this.img = contractor_images[Math.floor(Math.random() * contractor_images.length)];
+    this.index = Math.floor(Math.random() * contractor_images.length);
+    this.img = contractor_images[this.index];
     this.selected = false;
     this.amounts = [0, 0, 0, 0, 0, 0];
     this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
-    this.amounts[Math.floor(Math.random()*6)] += Math.floor(3+Math.random()*5);
-    console.log(this.amounts);
   }
 }
 
 // store which amounts of vegetables have been selected
 var amounts = [0, 0, 0, 0, 0, 0];
+var stats = [0, 0, 0, 0, 0, 0];
+var recentstats = [0, 0, 0, 0, 0, 0];
+var contractor_stats = [];
+
+for (let i = 0; i < contractor_images.length; i++) {
+  contractor_stats.push(0);
+}
 
 // initialize contractors at the beginning of the game, replace them after their contracts have been fulfilled
 var contractors = [];
@@ -130,8 +162,6 @@ class ContractsScreen extends Screen {
   constructor() {
     this.contractarea = Graphics.createArrayBuffer(450, 90, 8);
     this.contractarea.fillRect(0, 0, 450, 90);
-
-
 
     for (let i = 0; i < 5; i++) {
       this.contractarea.drawImage(Storage.read(contractors[i].img), i*90, 0);
@@ -174,7 +204,7 @@ class ContractsScreen extends Screen {
     g.drawImage(Storage.read("chilli.img"), 5, 68, {scale:0.5}); // chilli
     g.setFont("6x8:2x2").drawString("x" + amounts[2], 40, 76);
 
-    g.drawImage(Storage.read("corn.img"), 86, 10); // corn
+    g.drawImage(Storage.read("corn.img"), 86, 10, {scale:0.5}); // corn
     g.setFont("6x8:2x2").drawString("x" + amounts[3], 116, 15);
 
     g.drawImage(Storage.read("onion.img"), 86, 37, {scale:0.5}); // onion
@@ -225,6 +255,7 @@ class ContractsScreen extends Screen {
 
   button(){
     screenStack.pop();
+    screenStack[screenStack.length - 1].init();
   }
 }
 
@@ -233,13 +264,39 @@ class Vegetable {
   }
 }
 
+
+class Chilli extends Vegetable{
+  constructor(count){
+    this.count = count;
+    this.name = "Chilli";
+    this.anim1 = ["squats1.img", "side_squats1.img", "reverse_lunches1.img", "burpee1.img",];
+    this.anim2 = ["squats2.img", "side_squats2.img",  "reverse_lunches2.img", "burpee2.img",];
+    this.text = ["SQUAT to SOW!", "SIDE SQUAT to WATER!", "REVERSE LUNCH to GROW", "BURPEE to HARVEST!"];
+    this.countstyle = [true, true, true, true];
+    this.harvest = ["harvestchili1.img", "harvestchili2.img"];
+  }
+}
+
+class Turnip extends Vegetable{
+  constructor(count){
+    this.count = count;
+    this.name = "Turnip";
+    this.anim1 = ["plank.img", "plank.img", "plank.img", "plank.img",];
+    this.anim2 = ["plank.img", "plank_side_kicks.img",  "planks_kicks2.img", "plank_raise.img",];
+    this.text = ["PlANK to SOW!", "PLANK SIDE KICKS to WATER!", "PLANK KICKS to GROW", "PLANK RAISE to HARVEST!"];
+    this.countstyle = [true, true, true, true];
+    this.harvest = ["harvestturnip1.img", "harvestturnip2.img"];
+  }
+}
+
+
 class Onion extends Vegetable{
   constructor(count){
     this.count = count;
     this.name = "Onion";
-    this.anim1 = ["burpee1.img", "sealjacks1.img", "kneeelbow1.img", "flutter1.img"];
-    this.anim2 = ["burpee2.img", "sealjacks2.img", "kneeelbow2.img", "flutter2.img"];
-    this.text = ["FLUTTER KICKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", "FLUTTER KICKS to HARVEST!"];
+    this.anim1 = ["flutter1.img", "plank.img", "plank.img", "plank.img",];
+    this.anim2 = ["flutter2.img", "plank_side_kicks.img",  "planks_kicks2.img", "plank_raise.img",];
+    this.text = ["FLUTTER KICKS to SOW!", "PLANK SIDE KICKS to WATER!", "PLANK KICKS to GROW", "PLANK RAISE to HARVEST!"];
     this.countstyle = [true, true, true, true];
     this.harvest = ["harvestonion1.img", "harvestonion2.img"];
   }
@@ -249,12 +306,40 @@ class Tomato extends Vegetable{
   constructor(count){
     this.count = count;
     this.name = "Tomato";
-    this.anim1 = ["sealjacks1.img", "sealjacks1.img", "kneeelbow1.img", ""];
-    this.anim2 = ["sealjacks2.img", "sealjacks2.img", "kneeelbow2.img", ""];
-    this.text = ["SEAL JACKS to SOW!", "SEAL JACKS to WATER!", "KNEE TO ELBOW to GROW", ""];
-    this.countstyle = [true, false, true, true]; // if true = time, else repetitions
+    this.anim1 = ["plank.img", "plank.img", "plank.img", "plank.img",];
+    this.anim2 = ["plank.img", "plank_side_kicks.img",  "planks_kicks2.img", "plank_raise.img",];
+    this.text = ["PlANK to SOW!", "PLANK SIDE KICKS to WATER!", "PLANK KICKS to GROW", "PLANK RAISE to HARVEST!"];
+    this.countstyle = [true, true, true, true];
+    this.harvest = ["harvesttomato1.img", "harvesttomato2.img"];
   }
 }
+
+class Wheat extends Vegetable{
+  constructor(count){
+    this.count = count;
+    this.name = "Wheat";
+    this.anim1 = ["plank.img", "plank.img", "plank.img", "plank.img",];
+    this.anim2 = ["plank.img", "plank_side_kicks.img",  "planks_kicks2.img", "plank_raise.img",];
+    this.text = ["PlANK to SOW!", "PLANK SIDE KICKS to WATER!", "PLANK KICKS to GROW", "PLANK RAISE to HARVEST!"];
+    this.countstyle = [true, true, true, true];
+    this.harvest = ["harvestwheat1.img", "harvestwheat2.img"];
+  }
+}
+
+
+class Corn extends Vegetable{
+  constructor(count){
+    this.count = count;
+    this.name = "Corn";
+    this.anim1 = ["plank.img", "plank.img", "plank.img", "plank.img",];
+    this.anim2 = ["plank.img", "plank_side_kicks.img",  "planks_kicks2.img", "plank_raise.img",];
+    this.text = ["PlANK to SOW!", "PLANK SIDE KICKS to WATER!", "PLANK KICKS to GROW", "PLANK RAISE to HARVEST!"];
+    this.countstyle = [true, true, true, true];
+    this.harvest = ["harvestcorn1.img", "harvestcorn2.img"];
+  }
+}
+
+
 
 var cropPhase1 = ["seeding.img", "watering1.img", "grow1.img"];
 var cropPhase2 = ["seeding2.img", "watering2.img", "grow2.img"];
@@ -263,9 +348,42 @@ var cropPhase2 = ["seeding2.img", "watering2.img", "grow2.img"];
 // implements the farming screen showing the different crops and which exercises need to be completed to harvest them
 class FarmScreen extends Screen {
   constructor() {
+    console.log("farm screen");
+    console.log("stacksize: " + screenStack.length);
+
     g.clear();
     this.currentPhase = 0;
-    this.vegetable = new Onion(5);
+
+    this.vegetable = undefined;
+
+    amounts = [0, 0, 1, 0, 0 , 0];
+    for (var i = 0; i< 6; i++){
+        if (amounts[i] > 0 && this.vegetable == undefined) {
+          switch (i) {
+            case 0:
+              this.vegetable = new Turnip(amounts[i]);
+              break;
+            case 1:
+              this.vegetable = new Tomato(amounts[i]);
+              break;
+            case 2:
+              this.vegetable = new Chilli(amounts[i]);
+              break;
+            case 3:
+              this.vegetable = new Corn(amounts[i]);
+              break;
+            case 4:
+              this.vegetable = new Onion(amounts[i]);
+              break;
+            case 5:
+              this.vegetable = new Wheat(amounts[i]);
+              break;
+            default: 
+              screenStack.pop(screenStack.length-1);
+              return;
+        }
+      }
+    }
 
     this.dragged = 0;
     this.validdrag = true;
@@ -330,7 +448,8 @@ class FarmScreen extends Screen {
     g.clearRect(0, 95, 176, 176);
 
     // write exercise description
-    g.setFont("6x8").drawString(this.vegetable.text[this.currentPhase], 25, 70);
+    g.setFont("6x8").setFontAlign(0, 0).drawString(this.vegetable.text[this.currentPhase], 86, 70);
+    g.setFontAlign(-1, -1);
 
     // two animation steps
     if(this.flippedTrainer){
@@ -387,7 +506,9 @@ class FarmScreen extends Screen {
     if (this.dragged < -50 && this.validdrag == true){
       g.clear();
       this.currentPhase += 1;
-      console.log("phase: " + this.currentPhase);
+      if (this.currentPhase >= 4){
+        return this.win();
+      }
       this.validdrag = false;
       this.dragged = 0;
       this.active = false;
@@ -424,7 +545,7 @@ class FarmScreen extends Screen {
     }
   }
 
-  button(){
+  win() {
     g.clear();
 
     // clear seconds timer interval
@@ -437,137 +558,156 @@ class FarmScreen extends Screen {
     clearInterval(this.trainerInterval);
     this.trainerInterval = undefined;
 
-    console.log(screenStack.length);
+    screenStack.pop(screenStack.length-1);
+
+    for (let i = 0; i< 6; i++){
+      if (amounts[i] > 0)
+      {
+        // find and replace satisfied contractors
+        for (let j = 0; j < 5; j++){
+          let c = contractors[j];
+          if (c.amounts[i] > 0) {
+            contractors[j] = new Contractor();
+            contractor_stats[c.index] += 1;
+          }
+        }
+
+        //add amount of this vegetable to stats
+        stats[i] += amounts[i];
+        recentstats[i] = amounts[i];
+        
+        amounts[i] = 0;
+        break;
+      }
+    }
+
+    for (let i = 0; i< 6; i++){
+      if (amounts[i] > 0){
+        screenStack.push(new FarmScreen());
+        return;
+      }
+    }
+
+    screenStack.push(new WinScreen());
+  }
+
+  button(){
+    console.log("button farmscreen");
+    console.log("stacksize: " + screenStack.length);
+
+    g.clear();
+
+    // clear seconds timer interval
+    if (this.timerInterval != undefined) {
+      clearInterval(this.timerInterval);
+    }
+    this.timerInterval = undefined;
+
+    // clear trainer animation interval
+    clearInterval(this.trainerInterval);
+    this.trainerInterval = undefined;
+    
+    console.log("stacksize: " + screenStack.length);
+    screenStack.pop(screenStack.length-1);
+    console.log("stacksize: " + screenStack.length);
+    screenStack[screenStack.length-1].init();
+  }
+}
+
+// implements the stats screen showing previously completed exercises
+class StatsScreenRecent extends Screen {
+  constructor() {
+  }
+
+  draw(){
+    g.clear();
+
+    //render function for bar plot
+    function renderBar(xCo, yCo, data) {
+      require("graph").drawBar(g, data, {
+        miny: 0,
+        axes : true,
+        x:xCo, y:yCo, width:150, height:70
+      });
+
+    g.drawImage(Storage.read("turnip.img"), 30, 145, {scale:0.3}); // turnip
+
+    g.drawImage(Storage.read("tomato.img"), 50, 145, {scale:0.3}); // tomato
+
+    g.drawImage(Storage.read("chilli.img"), 70, 145, {scale:0.3}); // chilli
+
+    g.drawImage(Storage.read("corn.img"), 90, 145, {scale:0.3}); // corn
+
+    g.drawImage(Storage.read("onion.img"), 110, 145, {scale:0.3}); // onion
+
+    g.drawImage(Storage.read("wheat.img"), 130, 145, {scale:0.3}); // wheat
+  }
+
+    g.setFont("6x8:2x2").setFontAlign(0,0).drawString("Harvested", 86, 10);
+    g.setFont("6x8:2x2").setFontAlign(0,0).drawString("Veggies", 86, 25);
+    g.setFont("6x8:2x2").setFontAlign(0,0).drawString("Last Workout", 86, 40);
+    g.setFontAlign(-1,-1);
+    renderBar(10,70,recentstats);
+  }
+
+  update(){
+  }
+
+  touch(button, xy){
+    screenStack.pop(screenStack.length-1);
+    screenStack.push(new StatsScreenAll());
+  }
+
+  drag(event){
+  }
+
+  button(){
     screenStack.pop(screenStack.length-1);
   }
 }
 
 // implements the stats screen showing previously completed exercises
-class StatsScreen extends Screen {
+class StatsScreenAll extends Screen {
   constructor() {
-  }
-
-  draw(){
-  g.clear();
-
-  //test data
-  var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-  var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
-  var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
-  var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
-
-  //render function for bar plot
-  function renderBar(xCo, yCo, data) {
-    require("graph").drawBar(g, data, {
-      miny: 0,
-      axes : true,
-      x:xCo, y:yCo, width:70, height:80
-    });
-  }
-
-  //render function for line plot
-  function renderLine(xCo, yCo, data) {
-    require("graph").drawLine(g, data, {
-      miny: 0,
-      axes : true,
-      x:xCo, y:yCo, width:70, height:80
-    });
-  }
-
-  g.setFont("6x8").drawString("Custom per day", 0, 3);
-  renderLine(5,10,data1);
-  g.setFont("6x8").drawString("Veggies last week", 90, 3);
-  renderBar(90,10,data2);
-  g.setFont("6x8").drawString("Custom per day", 0, 90);
-  renderBar(5,100,data3);
-  g.setFont("6x8").drawString("Veggies per day", 90, 90);
-  renderLine(90,100,data4);
-  //g.setFont("6x8").drawString("Finished", 100, 110);
-  //g.setFont("6x8").drawString("Routines:", 100, 130);
-  //g.setFont("6x8").drawString("168", 115, 150);
-  }
-
-  update(){
-  }
-
-  touch(button, xy){
-    console.log("touch", xy.x, xy.y);
-
-    //test data
-    var data1 = new Array( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-    var data2 = new Array( 5, 6, 7, 8, 9, 0, 1, 2, 3, 4);  
-    var data3 = new Array( 0, 1, 2, 8, 9, 0, 1, 2, 3, 4);  
-    var data4 = new Array( 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);  
-
-    //transition to detail view of the plots
-    if (xy.x > 5 && xy.x < 75 && xy.y > 3 && xy.y < 83) {
-      screenStack.push(new PlotScreen("Customer per day", data1, true));
-    }
-
-    if (xy.x > 85 && xy.x < 155 && xy.y > 3 && xy.y < 83) {
-      screenStack.push(new PlotScreen("Veggies last week", data2, false));
-    }
-
-    if (xy.x > 5 && xy.x < 75 && xy.y > 93 && xy.y < 173) {
-      screenStack.push(new PlotScreen("Customer per day", data3, false));
-    }
-
-    if (xy.x > 85 && xy.x < 155 && xy.y > 93 && xy.y < 173) {
-      screenStack.push(new PlotScreen("Veggies per day", data4, true));
-    }
-  }
-
-  drag(event){
-  }
-
-  button(){
-    screenStack.pop(screenStack.length-1);
-  }
-}
-
-// implements the plot screen for a single plot
-class PlotScreen extends Screen {  
-  constructor(caption, plotData, view) {
-    renderText = caption;
-    data = plotData;
-    style = view;
   }
 
   draw(){
     g.clear();
 
-    //render function bar plot full screen
+    //render function for bar plot
     function renderBar(xCo, yCo, data) {
       require("graph").drawBar(g, data, {
         miny: 0,
         axes : true,
-        x:xCo, y:yCo, width:150, height:150
+        x:xCo, y:yCo, width:150, height:70
       });
-    }
 
-    //render function line plot full screen
-    function renderLine(xCo, yCo, data) {
-      require("graph").drawLine(g, data, {
-        miny: 0,
-        axes : true,
-        x:xCo, y:yCo, width:150, height:150
-      });
-    }
+    g.drawImage(Storage.read("turnip.img"), 30, 145, {scale:0.3}); // turnip
 
-    g.setFont("6x8").drawString(renderText, 44, 3);
-    if(style){
-      renderLine(5,20,data);
-    }
-    else{
-      renderBar(5,20,data);
-    }
+    g.drawImage(Storage.read("tomato.img"), 50, 145, {scale:0.3}); // tomato
 
+    g.drawImage(Storage.read("chilli.img"), 70, 145, {scale:0.3}); // chilli
+
+    g.drawImage(Storage.read("corn.img"), 90, 145, {scale:0.3}); // corn
+
+    g.drawImage(Storage.read("onion.img"), 110, 145, {scale:0.3}); // onion
+
+    g.drawImage(Storage.read("wheat.img"), 130, 145, {scale:0.3}); // wheat
+  }
+
+  g.setFont("6x8:2x2").setFontAlign(0,0).drawString("Harvested", 86, 10);
+  g.setFont("6x8:2x2").setFontAlign(0,0).drawString("Veggies", 86, 25);
+  g.setFont("6x8:2x2").setFontAlign(0,0).drawString("In Total", 86, 40);
+  g.setFontAlign(-1,-1);
+  renderBar(10,70,stats);
   }
 
   update(){
   }
 
   touch(button, xy){
+    screenStack.pop(screenStack.length-1);
+    screenStack.push(new StatsScreenRecent());
   }
 
   drag(event){
@@ -578,26 +718,36 @@ class PlotScreen extends Screen {
   }
 }
 
+
 // implements the shopping screen allowing to buy cool stuff
-class ShoppingScreen extends Screen {
+class WinScreen extends Screen {
   constructor() {
-    this.posx = [15, 70, 130, 15, 70, 130];
-    this.posy = [15, 15, 15, 130, 130, 130];
-    this.ang = 0;
-    this.object = Storage.read("farmer.img");
+    this.flip = false;
+    this.posx = [0, 50, 100, 0, 50, 100];
+    this.posy = [5, 5, 5, 100, 100, 100];
+
+    this.img = [Storage.read("corn.img"), Storage.read("tomato.img"), Storage.read("chilli.img"), Storage.read("onion.img"), Storage.read("wheat.img"), Storage.read("turnip.img")];
+    this.img_rot = [Storage.read("corn_rot.img"), Storage.read("tomato_rot.img"), Storage.read("chili_rot.img"), Storage.read("onion_rot.img"), Storage.read("wheat_rot.img"), Storage.read("turnip_rot.img")];
+
     this.drawCall = setInterval(function(screen) {
-      screen.ang += 0.05;
+      screen.flip = !screen.flip;
       screen.drawRotatedObjects();
-    }, 100, this);
-    
+    }, 1000, this);
   }
 
   drawRotatedObjects() {
     g.clear();
-    g.setFont("6x8:2x3").drawString("You did it!", 20, 60);
+    Bangle.buzz();
+    let target = 0;
+    if (this.flip)
+      target = 1;
+    g.setFont("6x8:2x3").drawString("You did it!", 28, 75);
     for (let i = 0; i < 6; i++){
-      if (i == 4)
-        g.drawImage(this.object, this.posx[i]+10, this.posy[i]+10, {scale:0.8, rotate:this.ang});
+      if (i % 2 == target) { //draw even positions 
+         g.drawImage(this.img[i], this.posx[i]+10, this.posy[i]+10, {scale:0.8});
+      } else { //draw uneven positions
+         g.drawImage(this.img_rot[i], this.posx[i]+10, this.posy[i]+10, {scale:0.8});
+      }
     }
   }
 
@@ -617,14 +767,13 @@ class ShoppingScreen extends Screen {
 
   button(){
     g.clear();
-    
     // clear seconds timer interval
     if (this.drawCall != undefined) {
       clearInterval(this.drawCall);
     }
     this.drawCall = undefined;
-    
     screenStack.pop(screenStack.length-1);
+    console.log(screenStack.length);
   }
 }
 
